@@ -10,7 +10,7 @@ import re
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
+from rapidfuzz import process, fuzz
 
 # LOCAL FILES
 import dataframe_viewer
@@ -166,7 +166,7 @@ def setup_edit_tab(style, sub_button_frame, dataframe_management_content_frame, 
 
 class EditDataClass():
     def __init__(self, style, sub_button_frame, dataframe_management_content_frame, dataframe_viewer_content_frame, column_editor_content_frame, data_visualization_content_frame):
-        self.df = data_library.get_dataframe()
+        self.df = data_library.get_dataframe().copy()
 
         self.dataframe_management_content_frame = dataframe_management_content_frame
         self.dataframe_viewer_content_frame = dataframe_viewer_content_frame
@@ -257,7 +257,7 @@ class EditDataClass():
 
         # DELETE COLUMN BUTTON
         self.delete_column_button = ttk.Button(self.column_choice_frame, text="Delete Column", command=self.delete_column, style="large_button.TButton")
-        self.delete_column_button.pack(side=tk.TOP, fill=tk.X, expand=True, pady=10)
+        self.delete_column_button.pack(side=tk.TOP, pady=10)
 
 
 
@@ -300,6 +300,9 @@ class EditDataClass():
             for column in filtered_sorted_columns:
                 self.variable_listbox.insert(tk.END, column)
 
+
+
+
     def delete_column(self):
         if self.selected_column:
             delete_confirmation = utils.prompt_yes_no(f"Are you sure you want to delete the column '{self.selected_column}'?")
@@ -309,8 +312,11 @@ class EditDataClass():
                 self.selected_column = None
                 self.variable_selection_menu_label.config(text=f"Selected Variable: {self.selected_column}")
                 self.rename_column_selection = "No"
+                data_library.add_df_update_status_to_dict("column_editor_tab", True)
+                data_library.add_df_update_status_to_dict("data_visualization_tab", True)
                 dataframe_viewer.setup_dataframe_viewer_tab(self.style, self.sub_button_frame, self.dataframe_management_content_frame, self.dataframe_viewer_content_frame, self.column_editor_content_frame, self.data_visualization_content_frame, reset_tables=True)
                 utils.show_message("Dataframe Update Status", "Database Has Been Updated")
+
 
 
 
@@ -1969,11 +1975,13 @@ class CreateNewVariableClass:
 
             final_condition_string = ''.join(condition_strings)
 
+            
+
             self.new_df.loc[self.new_df.eval(final_condition_string), self.new_column_name] = condition_value
 
 
     def get_equation_values(self):
-        new_df = self.df.copy()
+        self.new_df = self.df.copy()
 
         self.new_column_name = self.variable_name_entry.get()
 

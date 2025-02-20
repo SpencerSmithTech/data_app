@@ -295,6 +295,10 @@ def save_editable_table(treeview, columns):
         rows.append(row)
     new_df = pd.DataFrame(rows, columns=columns)
 
+    # Replace leading underscores in column names
+    new_df.columns = new_df.columns.str.replace("^_", "")
+
+
     file_path = filedialog.asksaveasfilename(
         defaultextension=".xlsx",
         filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")]

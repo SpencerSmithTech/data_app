@@ -263,8 +263,6 @@ class ManageDataframesClass():
             
 
 
-################################################################################################################
-
     def on_dataframe_listbox_select(self, event):
         if self.dataframe_listbox.curselection():
             self.selected_dataframe = self.dataframe_listbox.get(self.dataframe_listbox.curselection()[0])
@@ -272,18 +270,14 @@ class ManageDataframesClass():
             return
 
 
-
-
-
-
-
+################################################################################################################
 
 
     def open_file(self):
         # Upload a file. Only allow .csv and any excel files
         self.file_path = filedialog.askopenfilename(title="Select A File", filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])    
 
-        # self.file_path = "/Users/spencersmith/Desktop/CODING/Projects/Data Science App/data/master_3.14.24.xlsx"
+        # self.file_path = r"/Users/spencersmith/Desktop/CODING/Projects/Data Science App/data/proximal_femur_fx_data(in).csv"
 
         if not self.file_path:
             return
@@ -305,6 +299,10 @@ class ManageDataframesClass():
 
         # Clean up the column names
         df.columns = (df.columns.str.replace(' ', '_').str.replace(r'\W+', '', regex=True).str.replace(r'_{2,}', '_', regex=True))
+
+        # Add leading underscore to column names that start with a number
+        df.columns = ['_' + col if col[0].isdigit() else col for col in df.columns]
+
 
         # Add the dataframe to the dictionary
         dataframe_name = os.path.basename(self.file_path)
@@ -1054,7 +1052,6 @@ class CreateDataframeClass():
 
         final_condition_string = ''.join(condition_strings)
         
-        print(final_condition_string)
 
         self.new_df = self.new_df.loc[self.new_df.eval(final_condition_string)]
 

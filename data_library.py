@@ -344,8 +344,8 @@ def get_comp_tab_data_selection():
 
 # REGRESSION MODEL MANAGEMENT
 
-reg_tab_dep_var = "major_complication"
-reg_tab_ind_var_list = ["age", "albumin", "bmi_cat"]
+reg_tab_dep_var = None
+reg_tab_ind_var_list = []
 reg_tab_selected_regression = None
 
 

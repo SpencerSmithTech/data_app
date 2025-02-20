@@ -213,7 +213,7 @@ def setup_visualize_tab(style, sub_button_frame, dataframe_management_content_fr
 class ComparisonTableClass:
     def __init__(self, data_visualization_content_frame, style):
 
-        self.df = data_library.get_dataframe()
+        self.df = data_library.get_dataframe().copy()
 
         self.data_visualization_content_frame = data_visualization_content_frame
 
@@ -265,9 +265,10 @@ class ComparisonTableClass:
         if self.selected_dependent_variable not in self.df.columns:
             self.selected_dependent_variable = None
 
-        for var in self.selected_independent_variables:
+        for var in self.selected_independent_variables[:]:
             if var not in self.df.columns:
                 self.selected_independent_variables.remove(var)
+    
 
 ################################################################################################################
 ################################################################################################################
@@ -318,13 +319,10 @@ class ComparisonTableClass:
         self.dependent_variable_listbox.bind("<Leave>",lambda e: utils.bind_mousewheel_to_frame(self.dependent_variable_inner_frame, self.dependent_variable_canvas, True))
 
 
-
         for column in sorted(self.df.columns, key=str.lower):
             self.dependent_variable_listbox.insert(tk.END, column)
 
         self.dependent_variable_listbox.bind("<<ListboxSelect>>", self.on_dependent_variable_listbox_select)
-
-
 
 
 ################################################################################################################
@@ -340,7 +338,9 @@ class ComparisonTableClass:
         self.dependent_frame_dependent_label.pack(side=tk.RIGHT, expand=True)
 
 
+################################################################################################################
 
+        # Load previously selected dependent variable
         if self.selected_dependent_variable:
             self.dependent_variable_listbox.selection_clear(0, tk.END)
             items = list(self.dependent_variable_listbox.get(0, tk.END))
@@ -357,7 +357,10 @@ class ComparisonTableClass:
         if self.dependent_variable_listbox.curselection():
             self.selected_dependent_variable = self.dependent_variable_listbox.get(self.dependent_variable_listbox.curselection()[0])
             data_library.set_comp_tab_dep_var(self.selected_dependent_variable)
-            self.dependent_frame_dependent_label.config(text=f"Dependent Variable: {self.selected_dependent_variable}")
+            self.dependent_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
+            self.independent_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
+            self.results_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
+            self.variable_handling_menu_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
 
 
     def update_dependent_variable_listbox(self, *args):
@@ -504,8 +507,9 @@ class ComparisonTableClass:
 
         if len(self.selected_independent_variables) > 0:
             for var in self.selected_independent_variables:
-                self.selected_independent_variable_listbox.insert(tk.END, var)
-                self.available_independent_variable_listbox.selection_set(sorted(self.df.columns, key=str.lower).index(var))
+                if var in self.df.columns:
+                    self.selected_independent_variable_listbox.insert(tk.END, var)
+                    self.available_independent_variable_listbox.selection_set(sorted(self.df.columns, key=str.lower).index(var))
             selections = self.available_independent_variable_listbox.curselection()
             for index in reversed(selections):
                 self.available_independent_variable_listbox.delete(index)
@@ -928,74 +932,51 @@ class ComparisonTableClass:
 ################################################################################################################
 
     def run_analysis(self):
-        try:
-            self.get_selected_variable_types()
-        except Exception as e:
-            print(f"Error in get_selected_variable_types: {e}")
-            
-        
-        try:
-            self.select_data()
-        except Exception as e:
-            print(f"Error in select_data: {e}")
-        
-        try:
-            self.run_individual_analyses()
-        except Exception as e:
-            print(f"Error in run_individual_analyses: {e}")
 
-    def get_selected_variable_types(self):
-        self.selected_variable_types = {}
+        self.select_data()
+        self.run_individual_analyses()
 
-        for var in self.selected_independent_variables:
-            if var in self.variable_type_dict:
-                self.selected_variable_types[var] = self.variable_type_dict[var]
+
 
     def select_data(self):
-        try:
-            if self.selected_data == "All Data":
-                self.table_df = self.df[self.selected_independent_variables + [self.selected_dependent_variable]].copy()
-                self.table_df = self.table_df.dropna(subset=[self.selected_dependent_variable])
-            elif self.selected_data == "Data Complete Only":
-                self.table_df = self.df[self.selected_independent_variables + [self.selected_dependent_variable]].copy()
-                self.table_df = self.table_df.dropna()
-        except Exception as e:
-            print(f"Error in select_data: {e}")
+        if self.selected_data == "All Data":
+            self.table_df = self.df[self.selected_independent_variables + [self.selected_dependent_variable]].copy()
+            self.table_df = self.table_df.dropna(subset=[self.selected_dependent_variable])
+        elif self.selected_data == "Data Complete Only":
+            self.table_df = self.df[self.selected_independent_variables + [self.selected_dependent_variable]].copy()
+            self.table_df = self.table_df.dropna()
+
 
     def run_individual_analyses(self):
-        try:
-            self.unique_dependent_variable_values = sorted(self.table_df[self.selected_dependent_variable].unique())
-            self.summary_table = []
 
-            for independent_variable, option in self.selected_variable_types.items():
-                try:
-                    if option == "Continuous":
-                        self.analyze_continuous_variable(independent_variable)
-                    elif option == "Categorical":
-                        self.clean_df = self.table_df.copy()
-                        self.clean_df[self.selected_dependent_variable] = self.clean_df[self.selected_dependent_variable].astype(str)
-                        self.analyze_categorical_variable(independent_variable)
-                    elif option == "Both":
-                        self.analyze_continuous_variable(independent_variable)
-                        self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(str)
-                        self.analyze_categorical_variable(independent_variable)
-                except Exception as e:
-                    print(f"Error in run_individual_analyses for {independent_variable}: {e}")
-        except Exception as e:
-            print(f"Error in run_individual_analyses: {e}")
+        self.unique_dependent_variable_values = sorted(self.table_df[self.selected_dependent_variable].unique())
+        self.summary_table = []
+
+        for independent_variable in self.selected_independent_variables:
+            option = self.variable_type_dict[independent_variable]
+            
+            if option == "Continuous":
+                if independent_variable not in self.non_numeric_vars:
+                    self.analyze_continuous_variable(independent_variable)
+            elif option == "Categorical":
+                self.clean_df = self.table_df.copy()
+                self.analyze_categorical_variable(independent_variable)
+            elif option == "Both":
+                self.analyze_categorical_variable(independent_variable)
+                if independent_variable not in self.non_numeric_vars:
+                    self.analyze_continuous_variable(independent_variable)
+                        
 
     def analyze_categorical_variable(self, independent_variable):
         try:
+            self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(str)
             self.clean_df = self.table_df[[independent_variable, self.selected_dependent_variable]].dropna()
             observed = pd.crosstab(self.clean_df[independent_variable], self.clean_df[self.selected_dependent_variable])
-
-
 
             # Check if there are any cells with 0 values and if so, dont calculate odds ratio and make each ""
             if 0 in observed.values:
                 odds_ratio, ci_lower, ci_upper = "", "", ""
             elif len(observed) != 2:
-                print(len(observed))
                 odds_ratio, ci_lower, ci_upper = "", "", ""
             else:
                 odds_ratio, ci_lower, ci_upper = self.calculate_odds_ratio(observed)
@@ -1062,113 +1043,110 @@ class ComparisonTableClass:
             return row
 
     def add_observed_rows_to_summary(self, summary_table, observed, percent_type, unique_dependent_values):
-        try:
-            for index, row in observed.iterrows():
-                new_row = [f"  {index}"]
-                row_sum = row.sum()
-                column_sums = observed.sum(axis=0)
 
-                if percent_type == "Row":
-                    new_row.extend([f"{value} ({int(round(value / row_sum * 100, 0))}%)" for value in row])
-                elif percent_type == "Column":
-                    new_row.extend([f"{value} ({int(round(value / column_sum * 100, 0))}%)" for value, column_sum in zip(row, column_sums)])
+        for index, row in observed.iterrows():
+            new_row = [f"  {index}"]
+            row_sum = row.sum()
+            column_sums = observed.sum(axis=0)
 
+            if percent_type == "Row":
+                new_row.extend([f"{value} ({int(round(value / row_sum * 100, 0))}%)" for value in row])
+            elif percent_type == "Column":
+                new_row.extend([f"{value} ({int(round(value / column_sum * 100, 0))}%)" for value, column_sum in zip(row, column_sums)])
+
+            new_row.append(np.nan)
+            if len(unique_dependent_values) == 2:
                 new_row.append(np.nan)
-                if len(unique_dependent_values) == 2:
-                    new_row.append(np.nan)
 
-                summary_table.append(new_row)
+            summary_table.append(new_row)
 
-            summary_table.append([np.nan] * len(summary_table[0]))
-        except Exception as e:
-            print(f"Error in add_observed_rows_to_summary: {e}")
+        summary_table.append([np.nan] * len(summary_table[0]))
+
 
     def analyze_continuous_variable(self, independent_variable):
-        try:
-            self.clean_df = self.table_df[[independent_variable, self.selected_dependent_variable]].dropna()
-            self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(float)
 
-            row1 = []
-            row2 = []
-            row3 = []
+        self.clean_df = self.table_df[[independent_variable, self.selected_dependent_variable]].dropna()
+        self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(float)
 
-            row1.append(f"{independent_variable}")
-            row1.extend([np.nan] * (len(self.unique_dependent_variable_values)))
+        row1 = []
+        row2 = []
+        row3 = []
 
-            comparison_groups = []
+        row1.append(f"{independent_variable}")
+        row1.extend([np.nan] * (len(self.unique_dependent_variable_values)))
 
-            for value in self.unique_dependent_variable_values:
-                group = self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable]
-                comparison_groups.append(group)
+        comparison_groups = []
 
-            analysis_type = self.variable_analysis_dict[independent_variable]
+        for value in self.unique_dependent_variable_values:
+            group = self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable]
+            comparison_groups.append(group)
 
-            if analysis_type == "Parametric":
-                if len(comparison_groups) == 2:
-                    _, p_value = stats.ttest_ind(*comparison_groups)
-                elif len(comparison_groups) > 2:
-                    _, p_value = stats.f_oneway(*comparison_groups)
+        analysis_type = self.variable_analysis_dict[independent_variable]
+
+        if analysis_type == "Parametric":
+            if len(comparison_groups) == 2:
+                _, p_value = stats.ttest_ind(*comparison_groups)
+            elif len(comparison_groups) > 2:
+                _, p_value = stats.f_oneway(*comparison_groups)
+            else:
+                p_value = "error"
+        elif analysis_type == "Non-Parametric":
+            if len(comparison_groups) == 2:
+                _, p_value = stats.mannwhitneyu(*comparison_groups)
+            elif len(comparison_groups) > 2:
+                _, p_value = stats.kruskal(*comparison_groups)
+            else:
+                p_value = "error"
+        elif analysis_type == "Auto":
+            if self.check_normality(comparison_groups):
+                if self.check_variances(comparison_groups):
+                    if len(comparison_groups) == 2:
+                        _, p_value = stats.ttest_ind(*comparison_groups)
+                    elif len(comparison_groups) > 2:
+                        _, p_value = stats.f_oneway(*comparison_groups)
+                    else:
+                        p_value = "error"
                 else:
-                    p_value = "error"
-            elif analysis_type == "Non-Parametric":
+                    if len(comparison_groups) == 2:
+                        _, p_value = stats.ttest_ind(*comparison_groups, equal_var=False)
+                    elif len(comparison_groups) > 2:
+                        p_value = self.run_welchs_anova(*comparison_groups)
+                    else:
+                        p_value = "error"
+            else:
                 if len(comparison_groups) == 2:
                     _, p_value = stats.mannwhitneyu(*comparison_groups)
                 elif len(comparison_groups) > 2:
                     _, p_value = stats.kruskal(*comparison_groups)
                 else:
                     p_value = "error"
-            elif analysis_type == "Auto":
-                if self.check_normality(comparison_groups):
-                    if self.check_variances(comparison_groups):
-                        if len(comparison_groups) == 2:
-                            _, p_value = stats.ttest_ind(*comparison_groups)
-                        elif len(comparison_groups) > 2:
-                            _, p_value = stats.f_oneway(*comparison_groups)
-                        else:
-                            p_value = "error"
-                    else:
-                        if len(comparison_groups) == 2:
-                            _, p_value = stats.ttest_ind(*comparison_groups, equal_var=False)
-                        elif len(comparison_groups) > 2:
-                            p_value = self.run_welchs_anova(*comparison_groups)
-                        else:
-                            p_value = "error"
-                else:
-                    if len(comparison_groups) == 2:
-                        _, p_value = stats.mannwhitneyu(*comparison_groups)
-                    elif len(comparison_groups) > 2:
-                        _, p_value = stats.kruskal(*comparison_groups)
-                    else:
-                        p_value = "error"
 
-            if p_value < 0.0001:
-                p_value = '< 0.0001'
-                row1.append(p_value)
-            else:
-                row1.append(f"{p_value:.4f}")
+        if p_value < 0.0001:
+            p_value = '< 0.0001'
+            row1.append(p_value)
+        else:
+            row1.append(f"{p_value:.4f}")
 
-            row2.append("  Mean (SD)")
-            for value in self.unique_dependent_variable_values:
-                row2.append(f"{self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].mean():.1f} ({self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].std():.1f})")
+        row2.append("  Mean (SD)")
+        for value in self.unique_dependent_variable_values:
+            row2.append(f"{self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].mean():.1f} ({self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].std():.1f})")
+        row2.append(np.nan)
+        if len(self.unique_dependent_variable_values) == 2:
             row2.append(np.nan)
-            if len(self.unique_dependent_variable_values) == 2:
-                row2.append(np.nan)
 
-            row3.append("  Range")
-            for value in self.unique_dependent_variable_values:
-                row3.append(f"{self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].min():.1f} - {self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].max():.1f}")
+        row3.append("  Range")
+        for value in self.unique_dependent_variable_values:
+            row3.append(f"{self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].min():.1f} - {self.clean_df.loc[self.clean_df[self.selected_dependent_variable] == value, independent_variable].max():.1f}")
 
+        row3.append(np.nan)
+        if len(self.unique_dependent_variable_values) == 2:
             row3.append(np.nan)
-            if len(self.unique_dependent_variable_values) == 2:
-                row3.append(np.nan)
 
-            self.summary_table.append(row1)
-            self.summary_table.append(row2)
-            self.summary_table.append(row3)
-            self.summary_table.append([np.nan] * len(row1))
-        except Exception as e:
-            utils.show_message("Error", f"Error with {independent_variable}: {e}")
-            raise
+        self.summary_table.append(row1)
+        self.summary_table.append(row2)
+        self.summary_table.append(row3)
+        self.summary_table.append([np.nan] * len(row1))
+
 
     def check_normality(self, groups):
         normal = True
@@ -1214,47 +1192,46 @@ class ComparisonTableClass:
             return np.nan
 
     def create_comparison_table(self):
-        try:
-            self.run_analysis()
 
-            # Clear results display frame
-            utils.remove_frame_widgets(self.results_display_frame)
 
-            columns = ['Characteristic']
-            for value in self.unique_dependent_variable_values:
-                count_of_value = len(self.table_df.loc[self.table_df[self.selected_dependent_variable] == value])
-                columns.append(f"{value} (N = {count_of_value})")
+        self.run_analysis()
 
-            columns.append('p-value')
-            if len(self.unique_dependent_variable_values) == 2:
-                columns.append("Odds ratio (95% CI)")
-            else:
-                columns.append(np.nan)
+        # Clear results display frame
+        utils.remove_frame_widgets(self.results_display_frame)
 
-            # Check if the number of columns matches the data
-            num_columns = len(columns)
-            for row in self.summary_table:
-                if len(row) != num_columns:
-                    row.append(np.nan)
+        columns = ['Characteristic']
+        for value in self.unique_dependent_variable_values:
+            count_of_value = len(self.table_df.loc[self.table_df[self.selected_dependent_variable] == value])
+            columns.append(f"{value} (N = {count_of_value})")
 
-            self.summary_df = pd.DataFrame(self.summary_table, columns=columns)
+        columns.append('p-value')
+        if len(self.unique_dependent_variable_values) == 2:
+            columns.append("Odds ratio (95% CI)")
+        else:
+            columns.append(np.nan)
 
-            if len(self.unique_dependent_variable_values) > 2:
-                # Drop last column
-                self.summary_df = self.summary_df.drop(self.summary_df.columns[-1], axis=1)
-                
+        # Check if the number of columns matches the data
+        num_columns = len(columns)
+        for row in self.summary_table:
+            if len(row) != num_columns:
+                row.append(np.nan)
 
-            height = int(len(self.summary_df) * 1.2)
-            if height > 20:
-                height = 20
+        self.summary_df = pd.DataFrame(self.summary_table, columns=columns)
 
-            table, columns = utils.create_editable_table(self.results_display_frame, self.summary_df, self.style, height=height)
+        if len(self.unique_dependent_variable_values) > 2:
+            # Drop last column
+            self.summary_df = self.summary_df.drop(self.summary_df.columns[-1], axis=1)
+            
 
-            save_summary_button = ttk.Button(self.results_display_frame, text="Save Table", command=lambda: utils.save_editable_table(table, columns), style="large_button.TButton")
-            save_summary_button.pack(side=tk.BOTTOM, pady=10)
-        except Exception as e:
-            utils.show_message("Error", f"Error creating comparison table: {e}")
-            raise
+        height = int(len(self.summary_df) * 1.2)
+        if height > 20:
+            height = 20
+
+        table, columns = utils.create_editable_table(self.results_display_frame, self.summary_df, self.style, height=height)
+
+        save_summary_button = ttk.Button(self.results_display_frame, text="Save Table", command=lambda: utils.save_editable_table(table, columns), style="large_button.TButton")
+        save_summary_button.pack(side=tk.BOTTOM, pady=10)
+
 
 
 
@@ -1267,22 +1244,15 @@ class ComparisonTableClass:
 
     # NAVIGATION MENU HANDLING FUNCTIONS
 
-    def switch_frame(self, frame_name):
-        if frame_name == "Dependent Variable Frame":
+    def switch_frame(self, from_frame, to_frame):
+        if to_frame == "Dependent Variable Frame":
             self.switch_to_dependent_variable_frame()
-        elif frame_name == "Independent Variables Frame":
+        elif to_frame == "Independent Variables Frame":
             self.switch_to_independent_variables_frame()
-        elif frame_name == "Variable Handling Frame":
+        elif to_frame == "Variable Handling Frame":
             self.switch_to_variable_handling_frame()
-        elif frame_name == "Results Frame":
+        elif to_frame == "Results Frame":
             self.switch_to_results_frame()
-            
-
-
-
-
-
-
 
 
 
@@ -1309,11 +1279,9 @@ class ComparisonTableClass:
         self.dependent_variable_frame.pack_forget()
         self.indedependent_variables_frame.pack(fill=tk.BOTH, expand=True, padx=17, pady=17)
 
-        self.dependent_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
         self.independent_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
         self.results_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
         self.variable_handling_menu_frame_dependent_label.configure(text=f"Dependent Variable: {self.selected_dependent_variable}")
-
 
         utils.bind_mousewheel_to_frame(self.independent_variables_inner_frame, self.independent_variables_canvas, True)
         self.data_visualization_content_frame.update_idletasks()
@@ -1341,10 +1309,11 @@ class ComparisonTableClass:
 
 
     def switch_to_results_frame(self):
-        try:
-            self.create_comparison_table()
-        except:
+        if self.check_for_variable_handling_errors():
             return
+
+        self.create_comparison_table()
+
             
         self.indedependent_variables_frame.pack_forget()
         self.dependent_variable_frame.pack_forget()
@@ -1385,6 +1354,7 @@ class ComparisonTableClass:
         if self.selected_dependent_variable in self.selected_independent_variables:
             utils.show_message("Error", "Dependent variable cannot be an independent variable")
             return True
+
         # Check if selected independent variables are in the dataframe and state which ones are not
         missing_vars = [var for var in self.selected_independent_variables if var not in self.df.columns]
         if missing_vars:
@@ -1395,11 +1365,22 @@ class ComparisonTableClass:
         return False
 
     def check_for_variable_handling_errors(self):
-        for var, option in self.variable_type_dict.items():
+        self.non_numeric_vars = []
+        for var in self.selected_independent_variables:
+            option = self.variable_type_dict[var]
             if var not in self.df.columns:
                 utils.show_message("Error", f"{var} is not in the data")
                 return True
-        
+            if option == "Continuous" or option == "Both":
+                try:
+                    var_test_df = self.df[[var, self.selected_dependent_variable]].dropna()
+                    var_test_df = self.df[var].astype(float)
+                except:
+                    self.non_numeric_vars.append(var)
+        if self.non_numeric_vars:
+            utils.show_message("Error", f"The following variables are not numeric and cant be analyzed as continuous:\n{', '.join(self.non_numeric_vars)}")
+            return True
+        return False
 
 
 
@@ -1489,7 +1470,9 @@ class RegressionAnalysisClass:
         self.selected_independent_variables = data_library.get_reg_tab_ind_var_list()
         self.selected_regression = data_library.get_reg_tab_selected_regression()
 
+
         self.verify_saved_columns()
+
 
         self.non_numeric_input_var_dict = data_library.get_non_numeric_ind_dict()
         self.one_hot_encoding_var_list = data_library.get_one_hot_encoding_list()
@@ -1521,9 +1504,11 @@ class RegressionAnalysisClass:
         if self.selected_dependent_variable not in self.df.columns:
             self.selected_dependent_variable = None
 
-        for var in self.selected_independent_variables:
+        for var in self.selected_independent_variables[:]:
             if var not in self.df.columns:
                 self.selected_independent_variables.remove(var)
+        
+
 
 ################################################################################################################
 ################################################################################################################
@@ -1757,8 +1742,9 @@ class RegressionAnalysisClass:
 
         if len(self.selected_independent_variables) > 0:
             for var in self.selected_independent_variables:
-                self.selected_independent_variable_listbox.insert(tk.END, var)
-                self.available_independent_variable_listbox.selection_set(sorted(self.df.columns, key=str.lower).index(var))
+                if var in self.df.columns:
+                    self.selected_independent_variable_listbox.insert(tk.END, var)
+                    self.available_independent_variable_listbox.selection_set(sorted(self.df.columns, key=str.lower).index(var))
             selections = self.available_independent_variable_listbox.curselection()
             for index in reversed(selections):
                 self.available_independent_variable_listbox.delete(index)
@@ -2903,6 +2889,14 @@ class RegressionAnalysisClass:
 
 
     def check_log_reg_variable_handling_errors(self):
+        if self.selected_dependent_variable not in self.df.columns:
+            utils.show_message("error message", "Dependent Variable not in Dataframe")
+            return True
+        
+        # Check for binary outcome variable
+        if len(self.df[self.selected_dependent_variable].dropna().unique()) != 2:
+            utils.show_message('dependent variable error', 'Dependent Variable not binary for logistic regression')
+            return True
 
         for variable in self.selected_independent_variables:
             if variable not in self.log_reg_variable_type_dict:
@@ -2927,6 +2921,7 @@ class RegressionAnalysisClass:
             if any("'" in str(value) or '"' in str(value) for value in self.df[variable].unique()):
                 utils.show_message("Error", f"ERROR: Variable values in {variable} contain quotation marks. Please remove them.")
                 return True
+            
 
 
 
@@ -3190,7 +3185,8 @@ class CreatePlotClass():
 
 
 
-
+################################################################################################################
+################################################################################################################
 ################################################################################################################
 
 
@@ -3248,12 +3244,13 @@ class CreatePlotClass():
         self.x_axis_variable_label.pack(side=tk.TOP, pady=10)
 
         if self.selected_x_axis_variable:
-            self.x_axis_variable_label.config(text=f"X-Axis: {self.selected_x_axis_variable}")
-            self.x_axis_variable_listbox.selection_clear(0, tk.END)
-            items = list(self.x_axis_variable_listbox.get(0, tk.END))
-            index = items.index(self.selected_x_axis_variable)
-            self.x_axis_variable_listbox.selection_set(index)
-            self.x_axis_variable_listbox.yview(index)
+            if self.selected_x_axis_variable in self.df.columns:
+                self.x_axis_variable_label.config(text=f"X-Axis: {self.selected_x_axis_variable}")
+                self.x_axis_variable_listbox.selection_clear(0, tk.END)
+                items = list(self.x_axis_variable_listbox.get(0, tk.END))
+                index = items.index(self.selected_x_axis_variable)
+                self.x_axis_variable_listbox.selection_set(index)
+                self.x_axis_variable_listbox.yview(index)
         ###################### X AXIS ######################
 
 
@@ -3291,12 +3288,13 @@ class CreatePlotClass():
         self.y_axis_variable_label.pack(side=tk.TOP, pady=10)
 
         if self.selected_y_axis_variable:
-            self.y_axis_variable_label.config(text=f"Y-Axis: {self.selected_y_axis_variable}")
-            self.y_axis_variable_listbox.selection_clear(0, tk.END)
-            items = list(self.y_axis_variable_listbox.get(0, tk.END))
-            index = items.index(self.selected_y_axis_variable)
-            self.y_axis_variable_listbox.selection_set(index)
-            self.y_axis_variable_listbox.yview(index)
+            if self.selected_y_axis_variable in self.df.columns:
+                self.y_axis_variable_label.config(text=f"Y-Axis: {self.selected_y_axis_variable}")
+                self.y_axis_variable_listbox.selection_clear(0, tk.END)
+                items = list(self.y_axis_variable_listbox.get(0, tk.END))
+                index = items.index(self.selected_y_axis_variable)
+                self.y_axis_variable_listbox.selection_set(index)
+                self.y_axis_variable_listbox.yview(index)
         ###################### Y AXIS ######################
 
         # ############################################################################################################
@@ -3488,8 +3486,33 @@ class CreatePlotClass():
             for column in filtered_sorted_columns:
                 self.x_axis_variable_listbox.insert(tk.END, column)
 
+
+
+
+
 ################################################################################################################
 
+    def check_scatter_plot_settings(self):
+        if not self.selected_x_axis_variable or not self.selected_y_axis_variable:
+            utils.show_message("Error", "X and Y AXIS VARIABLES must be selected")
+            return False
+        if self.selected_x_axis_variable == self.selected_y_axis_variable:
+            utils.show_message("Error", "X and Y AXIS VARIABLES must be different")
+            return False
+        if self.selected_x_axis_variable not in self.df.columns or self.selected_y_axis_variable not in self.df.columns:
+            utils.show_message("Error", "Selected variables must be in the dataframe")
+            return False
+        for var in [self.selected_x_axis_variable, self.selected_y_axis_variable]:
+            try:
+                self.df[var] = self.df[var].astype(float)
+            except ValueError:
+                utils.show_message("Error", f"Selected variables must be continuous. Unable to convert '{var}' to continuous")
+                return False
+        return True
+
+################################################################################################################
+################################################################################################################
+################################################################################################################
 
     def disply_kaplan_meier_settings(self):
 
@@ -3555,8 +3578,18 @@ class CreatePlotClass():
         self.time_period_duration_frame = tk.Frame(self.time_to_event_frame, bg=color_dict["sub_frame_bg"])
         self.time_period_duration_frame.pack(side=tk.TOP, fill=tk.X)
 
-        self.time_period_duration_label = ttk.Label(self.time_period_duration_frame, text="Time Period Max Duration:", style="sub_frame_sub_header.TLabel")
+        self.time_period_label_frame = tk.Frame(self.time_to_event_frame, bg=color_dict["sub_frame_bg"])
+        self.time_period_label_frame.pack(side=tk.TOP)
+
+        self.time_period_duration_label = ttk.Label(self.time_period_label_frame, text="Time Period Max Duration:", style="sub_frame_sub_header.TLabel")
         self.time_period_duration_label.pack(side=tk.TOP, padx=10)
+
+        self.time_period_entry_box = tk.Entry(self.time_period_label_frame, font=styles.entrybox_small_font)
+        self.time_period_entry_box.pack(side=tk.TOP, padx=10, pady=10)
+
+        # link the entry box to the slider with on_time_period_entry_box_change or user hits enter
+        self.time_period_entry_box.bind("<FocusOut>", self.on_time_period_entry_box_change)
+        self.time_period_entry_box.bind("<Return>", self.on_time_period_entry_box_change)
 
         self.time_period_duration_slider = ttk.Scale(self.time_period_duration_frame, orient='horizontal', length=300, command=lambda x: self.update_scale_label(self.time_period_duration_slider.get()))
         self.time_period_duration_slider.pack(side=tk.TOP, fill=tk.X, expand=True, padx=10, pady=10)
@@ -3567,7 +3600,7 @@ class CreatePlotClass():
         # Get the stored time to event variable
         self.selected_time_to_event_variable = data_library.get_kaplan_plot_time_variable()
 
-        if self.selected_time_to_event_variable:
+        if self.selected_time_to_event_variable and self.selected_time_to_event_variable in self.df.columns:
             self.time_to_event_variable_label.config(text=f"Time to Event Variable: {self.selected_time_to_event_variable}")
             self.time_to_event_variable_listbox.selection_clear(0, tk.END)
             items = list(self.time_to_event_variable_listbox.get(0, tk.END))
@@ -3619,7 +3652,7 @@ class CreatePlotClass():
         self.group_variable_listbox_label = ttk.Label(self.group_selection_frame, text="No Variable Selected", style="sub_frame_sub_header.TLabel")
         self.group_variable_listbox_label.pack(side=tk.TOP, pady=10)
 
-        if self.selected_group_variable:
+        if self.selected_group_variable and self.selected_group_variable in self.df.columns:
             self.group_variable_listbox.selection_clear(0, tk.END)
             items = list(self.group_variable_listbox.get(0, tk.END))
             index = items.index(self.selected_group_variable)
@@ -3647,7 +3680,17 @@ class CreatePlotClass():
         self.groups_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=10)
            
 
-
+    # Function to adjust slider value based on entry box value
+    def on_time_period_entry_box_change(self, event):
+        try:
+            value = float(self.time_period_entry_box.get())
+            if value < self.time_period_duration_slider.cget("from"):
+                value = self.time_period_duration_slider.cget("from")
+            elif value > self.time_period_duration_slider.cget("to"):
+                value = self.time_period_duration_slider.cget("to")
+            self.time_period_duration_slider.set(value)
+        except:
+            pass
 
     # Function to update the slider's min and max values
     def on_time_to_event_variable_listbox_select(self, event):
@@ -3671,6 +3714,7 @@ class CreatePlotClass():
 
             self.selected_time_to_event_variable = selected_option
             data_library.set_kaplan_plot_time_variable(self.selected_time_to_event_variable)
+
             self.time_to_event_variable_label.config(text=f"Time to Event Variable: {self.selected_time_to_event_variable}")
 
 
@@ -3682,7 +3726,10 @@ class CreatePlotClass():
 
     # This function will be called whenever the slider value changes
     def update_scale_label(self, value):
-        self.time_period_duration_label.config(text=f"Time Period Max Duration: {float(value):.2f}")
+        # Clear entry box and replace with slider value
+        self.time_period_entry_box.delete(0, tk.END)
+        self.time_period_entry_box.insert(0, f"{float(value):.2f}")
+
 
 
     def update_time_to_event_variable_listbox(self, *args):
@@ -3783,7 +3830,35 @@ class CreatePlotClass():
             self.kaplan_group_frames.pop()
 
 
+################################################################################################################
 
+
+
+    def check_kaplan_meier_settings(self):
+        if not self.selected_time_to_event_variable:
+            utils.show_message("Error", "Time to Event Variable must be selected")
+            return False
+
+        if len(self.kaplan_group_frames) > 0:
+            for group_frame in self.kaplan_group_frames:
+                if not group_frame.winfo_children()[2].get():
+                    utils.show_message("Error", "All groups must have a sign selected")
+                    return False
+                if not group_frame.winfo_children()[3].get():
+                    utils.show_message("Error", "All groups must have a value selected")
+                    return False
+                if group_frame.winfo_children()[2].get() == "User Option" and not group_frame.winfo_children()[4].get():
+                    utils.show_message("Error", "All groups with 'User Option' sign must have a value entered")
+                    return False
+                
+
+        try:
+            self.df[self.selected_time_to_event_variable] = self.df[self.selected_time_to_event_variable].astype(float)
+        except ValueError:
+            utils.show_message("Error", f"Time to Event Variable '{self.selected_time_to_event_variable}' must be continuous")
+            return False
+        
+        return True
 
 
 ################################################################################################################
@@ -3908,29 +3983,6 @@ class CreatePlotClass():
 ################################################################################################################
 
     def create_kaplan_meier_curve(self):
-        if not self.selected_time_to_event_variable:
-            utils.show_message("Error", "Time to Event Variable and at least 1 Group must be created")
-            raise ValueError("Time to Event Variable not selected")
-
-        if len(self.kaplan_group_frames) > 0:
-            for group_frame in self.kaplan_group_frames:
-                if not group_frame.winfo_children()[2].get():
-                    utils.show_message("Error", "All groups must have a sign selected")
-                    raise ValueError("Group sign not selected")
-                if not group_frame.winfo_children()[3].get():
-                    utils.show_message("Error", "All groups must have a value selected")
-                    raise ValueError("Group value not selected")
-                if group_frame.winfo_children()[2].get() == "User Option" and not group_frame.winfo_children()[4].get():
-                    utils.show_message("Error", "All groups with 'User Option' sign must have a value entered")
-                    raise ValueError("User Option not entered")
-                
-
-        try:
-            self.df[self.selected_time_to_event_variable] = self.df[self.selected_time_to_event_variable].astype(float)
-        except ValueError:
-            utils.show_message("Error", f"Time to Event Variable '{self.selected_time_to_event_variable}' must be continuous")
-            raise
-
 
         clean_df = self.df.copy()
         slider_value = self.time_period_duration_slider.get()
@@ -4114,9 +4166,9 @@ class CreatePlotClass():
     def switch_to_plot_display_frame(self):
 
         if self.selected_plot == "Scatter Plot":
-            if self.selected_x_axis_variable == self.selected_y_axis_variable:
-                utils.show_message("Error", "X and Y AXIS VARIABLES must be different")
+            if not self.check_scatter_plot_settings():
                 return
+
             
             # if self.group_by_variable_button_selection == "Yes":
             #     if not self.selected_group_by_variable:
@@ -4132,6 +4184,8 @@ class CreatePlotClass():
             self.plot_display_label.config(text="Scatter Plot")
 
         if self.selected_plot == "Kaplan Meier Survival Curve":
+            if not self.check_kaplan_meier_settings():
+                return
             self.fig = self.create_kaplan_meier_curve()
             self.plot_display_label.config(text="Kaplan Meier Survival Curve")
         
@@ -4144,6 +4198,7 @@ class CreatePlotClass():
 
         utils.bind_mousewheel_to_frame(self.plot_display_inner_frame, self.plot_display_canvas, True)
         self.data_visualization_content_frame.update_idletasks()
+
 
 
 
@@ -4291,7 +4346,7 @@ class MachineLearningClass:
         if self.selected_dependent_variable not in self.df.columns:
             self.selected_dependent_variable = None
 
-        for var in self.selected_independent_variables:
+        for var in self.selected_independent_variables[:]:
             if var not in self.df.columns:
                 self.selected_independent_variables.remove(var)
 
