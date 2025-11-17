@@ -24,15 +24,15 @@ main_window = tk.Tk()
 
 
 # Make window full screen
-# main_window.wm_state('zoomed')
+main_window.wm_state('zoomed')
 
 
 # Custom window sizes
-screen_width = main_window.winfo_screenwidth() // 3
-screen_height = main_window.winfo_screenheight()
+# screen_width = main_window.winfo_screenwidth() // 3
+# screen_height = main_window.winfo_screenheight()
 
-# Make window take left third of screen
-main_window.geometry(f"{screen_width}x{screen_height}+0+0")
+# # Make window take left third of screen
+# main_window.geometry(f"{screen_width}x{screen_height}+0+0")
 
 # Make window take the center third of screen
 # main_window.geometry(f"{screen_width}x{screen_height}+{screen_width}+0")
