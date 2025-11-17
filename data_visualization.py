@@ -96,7 +96,7 @@ def setup_visualize_tab(style, sub_button_frame, dataframe_management_content_fr
 
     utils.remove_frame_widgets(sub_button_frame)
 
-    comparison_table_button = ttk.Button(sub_button_frame, text="Comparison Table", style="comparison_table_button.TButton")
+    comparison_table_button = ttk.Button(sub_button_frame, text="Group Comparison", style="comparison_table_button.TButton")
     comparison_table_button.pack(side="left", fill="x", expand=True)  # Set expand=True to fill the horizontal space
     comparison_table_button.config(command=lambda: ComparisonTableClass(data_visualization_content_frame, style))
 
@@ -292,7 +292,7 @@ class ComparisonTableClass:
         self.dependent_variable_selection_subframe = tk.Frame(self.dependent_variable_selection_subframe_border, bg=color_dict["sub_frame_bg"])
         self.dependent_variable_selection_subframe.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=2, pady=2)
 
-        self.dependent_variable_frame_label = ttk.Label(self.dependent_variable_selection_subframe, text="Dependent Variable Selection", style="sub_frame_header.TLabel")
+        self.dependent_variable_frame_label = ttk.Label(self.dependent_variable_selection_subframe, text="Select categorical variable to compare group metrics", style="sub_frame_header.TLabel")
         self.dependent_variable_frame_label.pack(side=tk.TOP, pady=10)
 
         separator = ttk.Separator(self.dependent_variable_selection_subframe, orient="horizontal", style="Separator.TSeparator")
@@ -455,33 +455,51 @@ class ComparisonTableClass:
         self.buttons_frame = tk.Frame(self.indedependent_variables_selection_frame, bg=color_dict["sub_frame_bg"])
         self.buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        self.transfer_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.transfer_buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
         # Larger buttons with ">>>" and "<<<" symbols
-        self.transfer_right_button = ttk.Button(self.buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
+        self.transfer_right_button = ttk.Button(self.transfer_buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
         self.transfer_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        self.transfer_left_button = ttk.Button(self.buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
+        self.transfer_left_button = ttk.Button(self.transfer_buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
         self.transfer_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, pady=10)
 
         # Text buttons "Select All" and "Clear Selection"
-        self.transfer_all_right_button = ttk.Button(self.buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
+        self.transfer_all_right_button = ttk.Button(self.transfer_buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
         self.transfer_all_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.transfer_all_left_button = ttk.Button(self.buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
+        self.transfer_all_left_button = ttk.Button(self.transfer_buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
         self.transfer_all_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
         # Import and export selected variables
-        self.import_variable_list_button = ttk.Button(self.buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
+        self.import_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
         self.import_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.export_variable_list_button = ttk.Button(self.buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
+        self.export_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
         self.export_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        separator = ttk.Separator(self.buttons_frame, orient="vertical", style="Separator.TSeparator")
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+        # ORDER BUTTONS FRAME
+        self.order_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.order_buttons_frame.pack(side=tk.RIGHT)
+
+        # move independent variables up or down to modify the order of analysis
+        self.move_up_button = ttk.Button(self.order_buttons_frame, text="Move Up", command=lambda: self.move_listbox_items_up(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_up_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        self.move_down_button = ttk.Button(self.order_buttons_frame, text="Move Down", command=lambda: self.move_listbox_items_down(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_down_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
         # SELECTED INDEPENDENT VARIABLES FRAME
@@ -583,10 +601,10 @@ class ComparisonTableClass:
         separator.pack(side=tk.TOP, fill=tk.X, padx=200, pady=10)
 
         # Initialize your buttons with the inactive style
-        self.all_data_radio_button = ttk.Button(self.data_choice_frame, text="All Data", style="inactive_radio_button.TButton", command=lambda: self.toggle_button_style("All Data"))
+        self.all_data_radio_button = ttk.Button(self.data_choice_frame, text="All Rows", style="inactive_radio_button.TButton", command=lambda: self.toggle_button_style("All Data"))
         self.all_data_radio_button.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
-        self.complete_data_only_radio_button = ttk.Button(self.data_choice_frame, text="Only Data-Complete Subjects", style="inactive_radio_button.TButton", command=lambda: self.toggle_button_style("Data Complete Only"))
+        self.complete_data_only_radio_button = ttk.Button(self.data_choice_frame, text="Only Data-Complete Rows", style="inactive_radio_button.TButton", command=lambda: self.toggle_button_style("Data Complete Only"))
         self.complete_data_only_radio_button.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
 
         # Load Previously Chosen Data Selection
@@ -726,7 +744,7 @@ class ComparisonTableClass:
 
         self.available_independent_variable_listbox.delete(0, tk.END)  # Clear the Listbox
         for item in items:
-            if item not in self.selected_independent_variables:
+            if item not in self.selected_independent_variables and item != self.selected_dependent_variable:
                 self.available_independent_variable_listbox.insert(tk.END, item)
 
         if top_visible_index >= 0:
@@ -736,12 +754,19 @@ class ComparisonTableClass:
 
     def import_variable_list(self):
         imported_variable_list = data_library.get_exported_variables_list()
+        current_variables = list(self.selected_independent_variable_listbox.get(0, tk.END))
 
         for var in imported_variable_list:
-            if var in self.df.columns:
+            if var in self.df.columns and var not in current_variables and var != self.selected_dependent_variable:
                 self.selected_independent_variable_listbox.insert(tk.END, var)
-                self.selected_independent_variables.append(var)
 
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(self.selected_independent_variable_listbox.size()): 
+            self.selected_independent_variables.append(self.selected_independent_variable_listbox.get(i))
+        
+        self.reorder_available_independent_variable_listbox_alphabetically()
+        
 
     def export_variable_list(self):
         data_library.clear_exported_variables_list()
@@ -749,6 +774,43 @@ class ComparisonTableClass:
             data_library.add_variable_to_exported_variables_list(var)
         
 
+
+    def move_listbox_items_up(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+        
+        for index in selections:
+            if index > 0:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index - 1, item)
+                listbox.selection_set(index - 1)
+        
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
+
+        
+                
+    
+    def move_listbox_items_down(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+
+        for index in reversed(selections):
+            if index < listbox.size() - 1:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index + 1, item)
+                listbox.selection_set(index + 1)
+
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
 
 
 
@@ -854,8 +916,13 @@ class ComparisonTableClass:
                 elif selected_type == "Both":
                     both_button.configure(style="active_radio_button.TButton")
             else:
-                self.variable_type_dict[var] = "Continuous"
-                continuous_button.configure(style="active_radio_button.TButton")
+                if len(self.df[var].unique()) <= 10:
+                    self.variable_type_dict[var] = "Categorical"
+                    categorical_button.configure(style="active_radio_button.TButton")
+                    analysis_type_dropdown.configure(state="disabled")
+                else:
+                    self.variable_type_dict[var] = "Continuous"
+                    continuous_button.configure(style="active_radio_button.TButton")
 
             if var in self.variable_analysis_dict:
                 analysis_type_dropdown.set(self.variable_analysis_dict[var])
@@ -959,7 +1026,7 @@ class ComparisonTableClass:
                 if independent_variable not in self.non_numeric_vars:
                     self.analyze_continuous_variable(independent_variable)
             elif option == "Categorical":
-                self.clean_df = self.table_df.copy()
+                
                 self.analyze_categorical_variable(independent_variable)
             elif option == "Both":
                 self.analyze_categorical_variable(independent_variable)
@@ -969,6 +1036,7 @@ class ComparisonTableClass:
 
     def analyze_categorical_variable(self, independent_variable):
         try:
+            self.clean_df = self.table_df.copy()
             self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(str)
             self.clean_df = self.table_df[[independent_variable, self.selected_dependent_variable]].dropna()
             observed = pd.crosstab(self.clean_df[independent_variable], self.clean_df[self.selected_dependent_variable])
@@ -1064,8 +1132,8 @@ class ComparisonTableClass:
 
 
     def analyze_continuous_variable(self, independent_variable):
-
-        self.clean_df = self.table_df[[independent_variable, self.selected_dependent_variable]].dropna()
+        self.clean_df = self.table_df.copy()
+        self.clean_df = self.clean_df[[independent_variable, self.selected_dependent_variable]].dropna()
         self.clean_df[independent_variable] = self.clean_df[independent_variable].astype(float)
 
         row1 = []
@@ -1273,6 +1341,8 @@ class ComparisonTableClass:
     def switch_to_independent_variables_frame(self):
         if self.check_for_dependent_variable_errors():
             return
+
+        self.reorder_available_independent_variable_listbox_alphabetically()
 
         self.variable_handling_frame.pack_forget()
         self.results_frame.pack_forget()
@@ -1686,37 +1756,56 @@ class RegressionAnalysisClass:
                 self.available_independent_variable_listbox.insert(tk.END, column)
 
 
+
         # TRANSFER BUTTONS
         self.buttons_frame = tk.Frame(self.indedependent_variables_selection_frame, bg=color_dict["sub_frame_bg"])
         self.buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        self.transfer_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.transfer_buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
         # Larger buttons with ">>>" and "<<<" symbols
-        self.transfer_right_button = ttk.Button(self.buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
+        self.transfer_right_button = ttk.Button(self.transfer_buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
         self.transfer_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        self.transfer_left_button = ttk.Button(self.buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
+        self.transfer_left_button = ttk.Button(self.transfer_buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
         self.transfer_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, pady=10)
 
         # Text buttons "Select All" and "Clear Selection"
-        self.transfer_all_right_button = ttk.Button(self.buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
+        self.transfer_all_right_button = ttk.Button(self.transfer_buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
         self.transfer_all_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.transfer_all_left_button = ttk.Button(self.buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
+        self.transfer_all_left_button = ttk.Button(self.transfer_buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
         self.transfer_all_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
         # Import and export selected variables
-        self.import_variable_list_button = ttk.Button(self.buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
+        self.import_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
         self.import_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.export_variable_list_button = ttk.Button(self.buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
+        self.export_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
         self.export_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        separator = ttk.Separator(self.buttons_frame, orient="vertical", style="Separator.TSeparator")
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+        # ORDER BUTTONS FRAME
+        self.order_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.order_buttons_frame.pack(side=tk.RIGHT)
+
+        # move independent variables up or down to modify the order of analysis
+        self.move_up_button = ttk.Button(self.order_buttons_frame, text="Move Up", command=lambda: self.move_listbox_items_up(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_up_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        self.move_down_button = ttk.Button(self.order_buttons_frame, text="Move Down", command=lambda: self.move_listbox_items_down(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_down_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
         # SELECTED INDEPENDENT VARIABLES FRAME
@@ -1725,6 +1814,7 @@ class RegressionAnalysisClass:
 
         self.selected_independent_variables_label = ttk.Label(self.selected_independent_variables_frame, text="Selected Variables", style="sub_frame_sub_header.TLabel")
         self.selected_independent_variables_label.pack(side=tk.TOP, pady=10)
+
 
 
 
@@ -1905,7 +1995,7 @@ class RegressionAnalysisClass:
 
         self.available_independent_variable_listbox.delete(0, tk.END)  # Clear the Listbox
         for item in items:
-            if item not in self.selected_independent_variables:
+            if item not in self.selected_independent_variables and item != self.selected_dependent_variable:
                 self.available_independent_variable_listbox.insert(tk.END, item)
 
         if top_visible_index >= 0:
@@ -1935,18 +2025,64 @@ class RegressionAnalysisClass:
             self.selected_regression = "Cox Regression"
             data_library.set_reg_tab_selected_regression(self.selected_regression)
 
+
     def import_variable_list(self):
         imported_variable_list = data_library.get_exported_variables_list()
+        current_variables = list(self.selected_independent_variable_listbox.get(0, tk.END))
 
         for var in imported_variable_list:
-            if var in self.df.columns:
+            if var in self.df.columns and var not in current_variables:
                 self.selected_independent_variable_listbox.insert(tk.END, var)
-                self.selected_independent_variables.append(var)
+
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(self.selected_independent_variable_listbox.size()): 
+            self.selected_independent_variables.append(self.selected_independent_variable_listbox.get(i))
+        
+        self.reorder_available_independent_variable_listbox_alphabetically()
 
     def export_variable_list(self):
         data_library.clear_exported_variables_list()
         for var in self.selected_independent_variables:
             data_library.add_variable_to_exported_variables_list(var)
+
+    def move_listbox_items_up(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+        
+        for index in selections:
+            if index > 0:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index - 1, item)
+                listbox.selection_set(index - 1)
+        
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
+
+        
+                
+    
+    def move_listbox_items_down(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+
+        for index in reversed(selections):
+            if index < listbox.size() - 1:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index + 1, item)
+                listbox.selection_set(index + 1)
+
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
+
 
 ################################################################################################################
 ################################################################################################################
@@ -4530,33 +4666,51 @@ class MachineLearningClass:
         self.buttons_frame = tk.Frame(self.indedependent_variables_selection_frame, bg=color_dict["sub_frame_bg"])
         self.buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        self.transfer_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.transfer_buttons_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+
         # Larger buttons with ">>>" and "<<<" symbols
-        self.transfer_right_button = ttk.Button(self.buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
+        self.transfer_right_button = ttk.Button(self.transfer_buttons_frame, text="Transfer Right >>>", command=self.transfer_right, style="large_button.TButton")
         self.transfer_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        self.transfer_left_button = ttk.Button(self.buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
+        self.transfer_left_button = ttk.Button(self.transfer_buttons_frame, text="<<< Transfer Left", command=self.transfer_left, style="large_button.TButton")
         self.transfer_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, pady=10)
 
         # Text buttons "Select All" and "Clear Selection"
-        self.transfer_all_right_button = ttk.Button(self.buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
+        self.transfer_all_right_button = ttk.Button(self.transfer_buttons_frame, text="Select All", command=self.transfer_all_right, style="large_button.TButton")
         self.transfer_all_right_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.transfer_all_left_button = ttk.Button(self.buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
+        self.transfer_all_left_button = ttk.Button(self.transfer_buttons_frame, text="Clear Selection", command=self.transfer_all_left, style="large_button.TButton")
         self.transfer_all_left_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
-        separator = ttk.Separator(self.buttons_frame, orient="horizontal", style="Separator.TSeparator")
+        separator = ttk.Separator(self.transfer_buttons_frame, orient="horizontal", style="Separator.TSeparator")
         separator.pack(side=tk.TOP, fill=tk.X, padx=20, pady=10)
 
         # Import and export selected variables
-        self.import_variable_list_button = ttk.Button(self.buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
+        self.import_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Import Variable List", command=self.import_variable_list, style="large_button.TButton")
         self.import_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
-        self.export_variable_list_button = ttk.Button(self.buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
+        self.export_variable_list_button = ttk.Button(self.transfer_buttons_frame, text="Export Variable List", command=self.export_variable_list, style="large_button.TButton")
         self.export_variable_list_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        separator = ttk.Separator(self.buttons_frame, orient="vertical", style="Separator.TSeparator")
+        separator.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
+
+        # ORDER BUTTONS FRAME
+        self.order_buttons_frame = tk.Frame(self.buttons_frame, bg=color_dict["sub_frame_bg"])
+        self.order_buttons_frame.pack(side=tk.RIGHT)
+
+        # move independent variables up or down to modify the order of analysis
+        self.move_up_button = ttk.Button(self.order_buttons_frame, text="Move Up", command=lambda: self.move_listbox_items_up(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_up_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
+
+        self.move_down_button = ttk.Button(self.order_buttons_frame, text="Move Down", command=lambda: self.move_listbox_items_down(self.selected_independent_variable_listbox), style="large_button.TButton")
+        self.move_down_button.pack(side=tk.TOP, pady=10, padx=10, fill=tk.X)
 
 
         # SELECTED INDEPENDENT VARIABLES FRAME
@@ -4801,7 +4955,7 @@ class MachineLearningClass:
 
         self.available_independent_variable_listbox.delete(0, tk.END)  # Clear the Listbox
         for item in items:
-            if item not in self.selected_independent_variables:
+            if item not in self.selected_independent_variables and item != self.selected_dependent_variable:
                 self.available_independent_variable_listbox.insert(tk.END, item)
 
         if top_visible_index >= 0:
@@ -4833,17 +4987,59 @@ class MachineLearningClass:
 
     def import_variable_list(self):
         imported_variable_list = data_library.get_exported_variables_list()
+        current_variables = list(self.selected_independent_variable_listbox.get(0, tk.END))
 
         for var in imported_variable_list:
-            if var in self.df.columns:
+            if var in self.df.columns and var not in current_variables:
                 self.selected_independent_variable_listbox.insert(tk.END, var)
-                self.selected_independent_variables.append(var)
+
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(self.selected_independent_variable_listbox.size()): 
+            self.selected_independent_variables.append(self.selected_independent_variable_listbox.get(i))
+        
+        self.reorder_available_independent_variable_listbox_alphabetically()
 
     def export_variable_list(self):
         data_library.clear_exported_variables_list()
         for var in self.selected_independent_variables:
             data_library.add_variable_to_exported_variables_list(var)
-            
+
+    def move_listbox_items_up(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+        
+        for index in selections:
+            if index > 0:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index - 1, item)
+                listbox.selection_set(index - 1)
+        
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
+
+        
+    def move_listbox_items_down(self, listbox):
+        selections = listbox.curselection()
+        if not selections:
+            return
+
+        for index in reversed(selections):
+            if index < listbox.size() - 1:
+                item = listbox.get(index)
+                listbox.delete(index)
+                listbox.insert(index + 1, item)
+                listbox.selection_set(index + 1)
+
+        # update self.selected_independent_variables to reflect the new order
+        self.selected_independent_variables.clear()
+        for i in range(listbox.size()):
+            self.selected_independent_variables.append(listbox.get(i))
+
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################

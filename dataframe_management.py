@@ -277,7 +277,7 @@ class ManageDataframesClass():
         # Upload a file. Only allow .csv and any excel files
         self.file_path = filedialog.askopenfilename(title="Select A File", filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])    
 
-        # self.file_path = r"/Users/spencersmith/Desktop/CODING/Projects/Data Science App/data/proximal_femur_fx_data(in).csv"
+        # self.file_path = r"/Users/spencersmith/Library/CloudStorage/OneDrive-OregonHealth&ScienceUniversity/PROJECTS/YOO/Gunshots/data/gunshots_orth_surgery.csv"
 
         if not self.file_path:
             return
@@ -297,7 +297,7 @@ class ManageDataframesClass():
             utils.show_message('Error Loading', 'Error Reading File. Something went wrong.')
             return
 
-        # Clean up the column names
+        # Clean up the column names to only include alphanumeric characters and underscores
         df.columns = (df.columns.str.replace(' ', '_').str.replace(r'\W+', '', regex=True).str.replace(r'_{2,}', '_', regex=True))
 
         # Add leading underscore to column names that start with a number
@@ -329,9 +329,9 @@ class ManageDataframesClass():
 
     def update_dataframe_listbox(self):
         self.dataframe_listbox.delete(0, tk.END)
-        for dataframe in self.df_dict.keys():
-            if dataframe not in self.dataframe_listbox.get(0, tk.END):
-                self.dataframe_listbox.insert(tk.END, dataframe)
+        for dataframe_name in self.df_dict.keys():
+            if dataframe_name not in self.dataframe_listbox.get(0, tk.END):
+                self.dataframe_listbox.insert(tk.END, dataframe_name)
 
 
 
@@ -549,13 +549,12 @@ class CreateDataframeClass():
             self.selected_dataframe = self.df_dict[self.selected_dataframe_name]
  
 
-            self.dataframe_selection_menu_label.configure(text=f"Dependent Variable: {self.selected_dataframe_name}")
-            self.variable_selection_menu_label.configure(text=f"Dependent Variable: {self.selected_dataframe_name}")
-            self.dataframe_settings_menu_label.configure(text=f"Dependent Variable: {self.selected_dataframe_name}")
+            self.dataframe_selection_menu_label.configure(text=f"Selected Dataframe: {self.selected_dataframe_name}")
+            self.variable_selection_menu_label.configure(text=f"Selected Dataframe: {self.selected_dataframe_name}")
+            self.dataframe_settings_menu_label.configure(text=f"Selected Dataframe: {self.selected_dataframe_name}")
 
         else:
             return
-
 
 
 ################################################################################################################
@@ -836,7 +835,7 @@ class CreateDataframeClass():
 
         # FRAME WHERE THE USER CAN ADD OR REMOVE MORE CONDITIONS
         self.condition_handling_frame = tk.Frame(self.condition_options_frame)
-        self.condition_handling_frame.pack(side=tk.TOP, pady=10)
+        self.condition_handling_frame.pack(side=tk.BOTTOM, pady=10)
 
         self.add_simple_and_button = ttk.Button(self.condition_handling_frame, text='and', command=lambda: self.add_condition(label='and'), style="small_button.TButton")
         self.add_simple_and_button.pack(side=tk.LEFT)
@@ -1002,6 +1001,15 @@ class CreateDataframeClass():
             if condition[2] == "":
                 utils.show_message("No Condition Selected", "Please make sure all conditions have a condition selected.")
                 return
+            
+            # Check if the condition requires a continuous column
+            if condition[2] == "Less Than" or condition[2] == "Greater Than" or condition[2] == "Less Than or Equal To" or condition[2] == "Greater Than or Equal To":
+                # Try to convert the column to numeric
+                try:
+                    self.selected_dataframe[condition[1]] = self.selected_dataframe[condition[1]].astype(float)
+                except ValueError:
+                    utils.show_message("Invalid Condition", f"The condition '{condition[2]}' can only be applied to numeric columns.")
+                    return
 
             condition_string = condition_string + "("
             condition_string = condition_string + condition[1]

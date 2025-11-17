@@ -411,6 +411,7 @@ def create_summary_table(df):
 
         # Adding descriptive statistics for numeric columns
         if is_numeric(column):
+            temp_df[column] = temp_df[column].astype(float)  # Ensure the column is treated as float
             data.update(temp_df[column].describe()[describe_cols].to_dict())
 
         # Filtering out empty or all-NA columns from the data dictionary
@@ -423,7 +424,6 @@ def create_summary_table(df):
     summary = pd.concat(summary_list, ignore_index=True)
 
     return summary
-
 
 
 

@@ -308,13 +308,21 @@ class EditDataClass():
             delete_confirmation = utils.prompt_yes_no(f"Are you sure you want to delete the column '{self.selected_column}'?")
             if delete_confirmation:
                 self.df.drop(columns=self.selected_column, inplace=True)
-                self.update_variable_listbox()
-                self.selected_column = None
-                self.variable_selection_menu_label.config(text=f"Selected Variable: {self.selected_column}")
-                self.rename_column_selection = "No"
+                
+                data_library.add_dataframe_to_dict(data_library.get_current_df_name(), self.df)
+                data_library.set_dataframe(data_library.get_current_df_name())
+                
+                utils.remove_frame_widgets(self.column_editor_content_frame)
+                utils.remove_frame_widgets(self.data_visualization_content_frame)
+
                 data_library.add_df_update_status_to_dict("column_editor_tab", True)
                 data_library.add_df_update_status_to_dict("data_visualization_tab", True)
+
+
+                utils.remove_frame_widgets(self.dataframe_viewer_content_frame)
+
                 dataframe_viewer.setup_dataframe_viewer_tab(self.style, self.sub_button_frame, self.dataframe_management_content_frame, self.dataframe_viewer_content_frame, self.column_editor_content_frame, self.data_visualization_content_frame, reset_tables=True)
+
                 utils.show_message("Dataframe Update Status", "Database Has Been Updated")
 
 
@@ -1074,6 +1082,8 @@ class EditDataClass():
     def update_dataframe(self):
         if self.rename_column_selection == "Yes":
             new_column_name = self.rename_column_entry.get()
+            # Replace spaces with underscores
+            new_column_name = new_column_name.replace(" ", "_")
             if new_column_name in self.new_df.columns:
                 while new_column_name in self.new_df.columns:
                     result = messagebox.askyesno("Confirmation", f"WARNING: The column, '{new_column_name}' is already in the currrent dataframe. Are you sure you want to replace that")
@@ -1831,13 +1841,13 @@ class CreateNewVariableClass:
         value_entry.focus_set()
 
 
-        def remove_value_frame(new_value_frame_number):
-            if self.value_frames:
-                frame = self.value_frames.pop(new_value_frame_number)
+        def remove_value_frame(frame=new_value_frame):
+            if frame in self.value_frames:
+                self.value_frames.remove(frame)
                 frame.destroy()
 
 
-        delete_value_button = ttk.Button(value_entry_frame, text='Delete Value', command=lambda: remove_value_frame(new_value_frame_number), style="large_button.TButton")
+        delete_value_button = ttk.Button(value_entry_frame, text='Delete Value', command=lambda: remove_value_frame(new_value_frame), style="large_button.TButton")
         delete_value_button.pack(side=tk.LEFT, padx=10, pady=10)
 
 
@@ -1984,6 +1994,9 @@ class CreateNewVariableClass:
         self.new_df = self.df.copy()
 
         self.new_column_name = self.variable_name_entry.get()
+
+        # Replace spaces in column names with underscores
+        self.new_column_name = self.new_column_name.replace(' ', '_')
 
 
         equation_string = ''
@@ -2483,14 +2496,9 @@ class CreateNewVariableClass:
             self.error_message = f"Variable name '{variable_name}' already exists in the dataframe."
             return False
 
-        # Check if variable name has any spaces in it
-        elif " " in variable_name:
-            self.error_message = "Variable name cannot contain spaces."
-            return False
-
-        # Check if the variable name has special characters other than letters and numbers and underscores
-        elif not re.match(r'^\w+$', variable_name):
-            self.error_message = "Variable name can only contain letters, numbers, and underscores."
+        # Check if the variable name has special characters other than letters and numbers and underscores and spaces
+        elif not re.match("^[a-zA-Z0-9_ ]*$", variable_name):
+            self.error_message = "Variable name can only contain letters, numbers, spaces, and underscores."
             return False
         
         else:

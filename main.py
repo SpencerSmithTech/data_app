@@ -21,15 +21,18 @@ from styles import color_dict
 
 # Create the main window
 main_window = tk.Tk()
-screen_width = main_window.winfo_screenwidth() // 3
-screen_height = main_window.winfo_screenheight()
-main_window.title("DataFrame Editor")
+
 
 # Make window full screen
-main_window.wm_state('zoomed')
+# main_window.wm_state('zoomed')
+
+
+# Custom window sizes
+screen_width = main_window.winfo_screenwidth() // 3
+screen_height = main_window.winfo_screenheight()
 
 # Make window take left third of screen
-# main_window.geometry(f"{screen_width}x{screen_height}+0+0")
+main_window.geometry(f"{screen_width}x{screen_height}+0+0")
 
 # Make window take the center third of screen
 # main_window.geometry(f"{screen_width}x{screen_height}+{screen_width}+0")
@@ -242,12 +245,6 @@ style.configure("Vertical.TScrollbar", gripcount=0,
 style.configure("Horizontal.TScrollbar", gripcount=0,
                 background=color_dict["scrollbar_bg"], darkcolor=color_dict["scrollbar_bg"], lightcolor=color_dict["scrollbar_bg"],
                 troughcolor=color_dict["scrollbar_troughcolor"], bordercolor=color_dict["scrollbar_bg"], arrowcolor=color_dict["scrollbar_arrowcolor"])
-
-################################################################################################################
-
-# SCROLLBARS
-# generate a style that matches the theme style
-
 
 
 ################################################################################################################
