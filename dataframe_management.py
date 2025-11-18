@@ -275,7 +275,7 @@ class ManageDataframesClass():
 
     def open_file(self):
         # Upload a file. Only allow .csv and any excel files
-        self.file_path = filedialog.askopenfilename(title="Select A File", filetypes=[("Data files (CSV & Excel)", "*.csv *.xlsx")])    
+        self.file_path = filedialog.askopenfilename(title="Select A File", filetypes=[("Data files (CSV & Excel)", "*.xlsx *.csv")])    
 
         # self.file_path = r"/Users/spencersmith/Library/CloudStorage/OneDrive-OregonHealth&ScienceUniversity/PROJECTS/YOO/Gunshots/data/gunshots_orth_surgery.csv"
 
